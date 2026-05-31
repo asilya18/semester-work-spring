@@ -1,0 +1,13 @@
+databaseChangeLog:
+  - changeSet:
+      id: 02-nullable-review-ratings
+      author: asilya
+      changes:
+        - dropNotNullConstraint:
+            tableName: reviews
+            columnName: movie_rating
+            columnDataType: INTEGER
+        - dropNotNullConstraint:
+            tableName: reviews
+            columnName: event_rating
+            columnDataType: INTEGER

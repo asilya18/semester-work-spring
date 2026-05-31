@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{layout/base}"
+      lang="ru">
+<head><title th:text="${movie.title}">фильм</title></head>
+<body>
+<div layout:fragment="content">
+    <div class="filmstrip"></div>
+    <div class="detail-box">
+        <div class="movie-layout">
+            <div class="movie-poster-wrap">
+                <img th:if="${movie.posterUrl}" th:src="${movie.posterUrl}" th:alt="${movie.title}" class="movie-poster">
+                <div th:unless="${movie.posterUrl}" class="movie-poster-placeholder">🎬</div>
+            </div>
+            <div class="movie-info">
+                <h1 th:text="${movie.title}"></h1>
+                <div class="detail-meta">
+                    <span th:if="${movie.year}">📅 <span th:text="${movie.year}"></span></span>
+                    <span th:if="${movie.durationMinutes}">⏱ <span th:text="${movie.durationMinutes}"></span> мин</span>
+                    <span th:if="${movie.kinopoiskId}"><span class="badge badge-kp">кинопоиск</span></span>
+                </div>
+                <p class="movie-description" th:if="${movie.description}" th:text="${movie.description}"></p>
+
+                <div class="detail-actions" style="margin-top:1.5rem">
+                    <a sec:authorize="hasRole('ADMIN')"
+                       th:href="@{/movies/{id}/edit(id=${movie.id})}" class="btn btn-outline btn-sm">редактировать</a>
+                    <form sec:authorize="hasRole('ADMIN')"
+                          th:action="@{/movies/{id}/delete(id=${movie.id})}" method="post" style="display:inline"
+                          onsubmit="return confirm('удалить фильм?')">
+                        <button type="submit" class="btn btn-danger btn-sm">удалить</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <a th:href="@{/movies}" class="btn btn-muted btn-sm">← библиотека фильмов </a>
+</div>
+</body>
+</html>

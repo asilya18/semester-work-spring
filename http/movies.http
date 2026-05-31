@@ -1,0 +1,62 @@
+### ========== АВТОРИЗАЦИЯ ==========
+
+### Шаг 1: получить CSRF-токен
+GET http://localhost:8080/login
+
+> {%
+client.global.set("csrf", response.body.match(/name="_csrf"\s+value="([^"]+)"/)[1]);
+%}
+
+###
+
+### Шаг 2: войти
+POST http://localhost:8080/login
+Content-Type: application/x-www-form-urlencoded
+
+username=admin&password=admin1&_csrf={{csrf}}
+
+###
+
+
+### ========== Тесты поиска ==========
+### Поиск по русскому названию — ожидается JSON-массив
+GET http://localhost:8080/api/movies/search?query=интерстеллар
+Accept: application/json
+
+###
+
+### Поиск по английскому названию
+GET http://localhost:8080/api/movies/search?query=inception
+Accept: application/json
+
+###
+
+### Поиск — нет результатов, ожидается []
+GET http://localhost:8080/api/movies/search?query=xyzxyzxyz123
+Accept: application/json
+
+###
+
+
+### ========== Тесты валидации ==========
+
+### Создать фильм без обязательного поля title — ожидается 400 с ошибками валидации
+POST http://localhost:8080/api/movies
+Content-Type: application/json
+
+{
+  "year": 2024
+}
+
+###
+
+### Создать фильм с некорректным годом — ожидается 400
+POST http://localhost:8080/api/movies
+Content-Type: application/json
+
+{
+  "title": "Фильм",
+  "year": 1800
+}
+
+###

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      lang="ru">
+<head><title th:text="${movieNightId != null} ? 'редактировать киновечер' : 'новый киновечер'">киновечер</title></head>
+<body>
+<div layout:fragment="content">
+    <div class="filmstrip"></div>
+    <div class="form-container wide">
+        <h1 class="form-title" th:text="${movieNightId != null} ? 'редактировать киновечер' : 'новый киновечер'"></h1>
+        <form th:action="${movieNightId != null} ? @{/movienights/{id}/edit(id=${movieNightId})} : @{/movienights}"
+              th:object="${form}" method="post">
+            <div class="form-group">
+                <label for="title">название*</label>
+                <input type="text" id="title" th:field="*{title}" placeholder="например: комедийный вечер субботы " autofocus>
+                <span class="field-error" th:if="${#fields.hasErrors('title')}" th:errors="*{title}"></span>
+            </div>
+
+            <div class="form-group">
+                <label for="description">описание</label>
+                <textarea id="description" th:field="*{description}" placeholder="расскажите, какой киновечер вы хотите провести"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="eventDate">дата и время киновечера*</label>
+                <input type="datetime-local" id="eventDate" th:field="*{eventDate}">
+                <!-- type="datetime-local" показывает встроенный календарик браузера -->
+                <span class="field-error" th:if="${#fields.hasErrors('eventDate')}" th:errors="*{eventDate}"></span>
+                <span class="form-hint">дата проведения должна быть в будущем</span>
+            </div>
+
+            <div class="form-group">
+                <label for="platform">платформа проведения киновечера*</label>
+                <input type="text" id="platform" th:field="*{platform}" placeholder="например, discord">
+                <span class="field-error" th:if="${#fields.hasErrors('platform')}" th:errors="*{platform}"></span>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary btn-full"
+                        th:text="${movieNightId != null} ? 'cохранить изменения' : 'cоздать киновечер'"></button>
+                <a th:href="${movieNightId != null} ? @{/movienights/{id}(id=${movieNightId})} : @{/movienights}"
+                   class="btn btn-muted btn-full">Отмена</a>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>

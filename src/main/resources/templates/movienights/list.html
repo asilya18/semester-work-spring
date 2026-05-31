@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      lang="ru">
+<head><title>киновечера</title></head>
+<body>
+<div layout:fragment="content">
+    <div class="filmstrip"></div>
+    <div class="page-header">
+        <h1>какой киновечер подходит под твое настроение сегодня ?</h1>
+        <a th:href="@{/movienights/new}" class="btn btn-primary">+ создать свой киновечер</a>
+    </div>
+
+    <div th:if="${movieNights.empty}" class="empty-state">
+        <div class="empty-icon"></div>
+        <p>пока нет ни одного киновечера :(</p>
+        <a th:href="@{/movienights/new}" class="btn btn-primary" style="margin-top:1rem">cоздать первый</a>
+    </div>
+
+    <div class="cards-grid" th:unless="${movieNights.empty}">
+        <!-- th:unless — противоположность th:if -->
+        <div class="card" th:each="mn : ${movieNights}">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.5rem">
+                <h3 class="card-title" th:text="${mn.title}" style="margin-bottom:0"></h3>
+                <span class="badge"
+                      th:classappend="${mn.status.name() == 'PLANNED'} ? 'badge-planned' : (${mn.status.name() == 'ACTIVE'} ? 'badge-ongoing' : 'badge-finished')"
+                      th:text="${mn.status.name() == 'PLANNED'} ? 'запланирован' : (${mn.status.name() == 'ACTIVE'} ? 'идёт' : 'завершён')">
+                </span>
+            </div>
+            <p class="card-meta" th:if="${mn.description}" th:text="${#strings.abbreviate(mn.description, 80)}"></p>
+            <p class="card-meta">📅 <span th:text="${#temporals.format(mn.eventDate, 'dd.MM.yyyy HH:mm')}"></span></p>
+            <p class="card-meta" th:if="${mn.platform}">платформа: <span th:text="${mn.platform}"></span></p>
+            <p class="card-meta">организатор: <span th:text="${mn.creator.username}"></span></p>
+            <div class="card-actions">
+                <a th:href="@{/movienights/{id}(id=${mn.id})}" class="btn btn-outline btn-sm">подробнее</a>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

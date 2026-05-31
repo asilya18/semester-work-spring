@@ -1,0 +1,26 @@
+databaseChangeLog:
+  - changeSet:
+      id: 03-cascade-delete-movie
+      author: asilya
+      changes:
+        - dropForeignKeyConstraint:
+            baseTableName: votes
+            constraintName: fk_votes_nomination_id
+        - addForeignKeyConstraint:
+            baseTableName: votes
+            baseColumnNames: nomination_id
+            referencedTableName: nominations
+            referencedColumnNames: id
+            constraintName: fk_votes_nomination_id
+            onDelete: CASCADE
+
+        - dropForeignKeyConstraint:
+            baseTableName: nominations
+            constraintName: fk_nominations_movie_id
+        - addForeignKeyConstraint:
+            baseTableName: nominations
+            baseColumnNames: movie_id
+            referencedTableName: movies
+            referencedColumnNames: id
+            constraintName: fk_nominations_movie_id
+            onDelete: CASCADE

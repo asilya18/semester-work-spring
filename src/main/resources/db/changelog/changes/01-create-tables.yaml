@@ -1,0 +1,328 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1
+      author: asilya18
+      changes:
+        - createTable:
+            tableName: users
+            columns:
+              - column:
+                  name: id
+                  type: BIGSERIAL
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: username
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: email
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: password
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: role
+                  type: VARCHAR(20)
+                  defaultValue: USER
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: 2
+      author: asilya18
+      changes:
+        - createTable:
+            tableName: movies
+            columns:
+              - column:
+                  name: id
+                  type: BIGSERIAL
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: title
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: year
+                  type: INTEGER
+              - column:
+                  name: description
+                  type: TEXT
+              - column:
+                  name: poster_url
+                  type: VARCHAR(500)
+              - column:
+                  name: duration_minutes
+                  type: INTEGER
+              - column:
+                  name: kinopoisk_id
+                  type: VARCHAR(50)
+
+  - changeSet:
+      id: 3
+      author: asilya18
+      changes:
+        - createTable:
+            tableName: movie_nights
+            columns:
+              - column:
+                  name: id
+                  type: BIGSERIAL
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: title
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: TEXT
+              - column:
+                  name: event_date
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: platform
+                  type: VARCHAR(100)
+              - column:
+                  name: status
+                  type: VARCHAR(20)
+                  defaultValue: PLANNED
+                  constraints:
+                    nullable: false
+              - column:
+                  name: creator_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: movie_nights
+            baseColumnNames: creator_id
+            referencedTableName: users
+            referencedColumnNames: id
+            constraintName: fk_movie_nights_creator_id
+
+  - changeSet:
+      id: 4
+      author: asilya18
+      changes:
+        - createTable:
+            tableName: participants
+            columns:
+              - column:
+                  name: id
+                  type: BIGSERIAL
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: movie_night_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: role
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: participants
+            baseColumnNames: user_id
+            referencedTableName: users
+            referencedColumnNames: id
+            constraintName: fk_participants_user_id
+
+        - addForeignKeyConstraint:
+            baseTableName: participants
+            baseColumnNames: movie_night_id
+            referencedTableName: movie_nights
+            referencedColumnNames: id
+            constraintName: fk_participants_movie_night_id
+
+        - addUniqueConstraint:
+            tableName: participants
+            columnNames: user_id, movie_night_id
+            constraintName: uq_participants_user_movie_night
+
+  - changeSet:
+      id: 5
+      author: asilya18
+      changes:
+        - createTable:
+            tableName: nominations
+            columns:
+              - column:
+                  name: id
+                  type: BIGSERIAL
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: movie_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: movie_night_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: nominated_by
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: winner
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: nominations
+            baseColumnNames: movie_id
+            referencedTableName: movies
+            referencedColumnNames: id
+            constraintName: fk_nominations_movie_id
+
+        - addForeignKeyConstraint:
+            baseTableName: nominations
+            baseColumnNames: movie_night_id
+            referencedTableName: movie_nights
+            referencedColumnNames: id
+            constraintName: fk_nominations_movie_night_id
+
+        - addForeignKeyConstraint:
+            baseTableName: nominations
+            baseColumnNames: nominated_by
+            referencedTableName: users
+            referencedColumnNames: id
+            constraintName: fk_nominations_nominated_by
+
+        - addUniqueConstraint:
+            tableName: nominations
+            columnNames: movie_id, movie_night_id
+            constraintName: uq_nominations_movie_movie_night
+
+  - changeSet:
+      id: 6
+      author: asilya18
+      changes:
+        - createTable:
+            tableName: votes
+            columns:
+              - column:
+                  name: id
+                  type: BIGSERIAL
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: nomination_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: votes
+            baseColumnNames: nomination_id
+            referencedTableName: nominations
+            referencedColumnNames: id
+            constraintName: fk_votes_nomination_id
+
+        - addForeignKeyConstraint:
+            baseTableName: votes
+            baseColumnNames: user_id
+            referencedTableName: users
+            referencedColumnNames: id
+            constraintName: fk_votes_user_id
+
+        - addUniqueConstraint:
+            tableName: votes
+            columnNames: nomination_id, user_id
+            constraintName: uq_votes_nomination_user
+
+  - changeSet:
+      id: 7
+      author: asilya18
+      changes:
+        - createTable:
+            tableName: reviews
+            columns:
+              - column:
+                  name: id
+                  type: BIGSERIAL
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: movie_night_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: author_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: movie_rating
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: event_rating
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: comment
+                  type: TEXT
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: NOW()
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: reviews
+            baseColumnNames: movie_night_id
+            referencedTableName: movie_nights
+            referencedColumnNames: id
+            constraintName: fk_reviews_movie_night_id
+
+        - addForeignKeyConstraint:
+            baseTableName: reviews
+            baseColumnNames: author_id
+            referencedTableName: users
+            referencedColumnNames: id
+            constraintName: fk_reviews_author_id

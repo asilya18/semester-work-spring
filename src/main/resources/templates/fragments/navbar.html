@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      lang="ru">
+<body>
+<nav th:fragment="navbar" class="navbar">
+    <!-- навбар является фрагментом, то есть он  заменяет весь тег в других шаблонах -->
+    <a class="navbar-brand" th:href="@{/}"> movienights </a>
+    <ul class="navbar-nav" sec:authorize="isAuthenticated()">
+        <!-- этот блок видят только аутентифицированные -->
+        <li><a th:href="@{/movienights}">все киновечера</a></li>
+        <li><a th:href="@{/movienights/my}">мои киновечера</a></li>
+        <li><a th:href="@{/movies}">библиотека фильмов</a></li>
+    </ul>
+
+    <div class="navbar-user" sec:authorize="isAuthenticated()">
+        <span class="navbar-username" sec:authentication="name"></span>
+        <!-- name достается из UserPrincipal -->
+        <form th:action="@{/logout}" method="post" style="margin:0">
+            <button type="submit" class="nav-logout-btn">выйти</button>
+        </form>
+    </div>
+
+    <div class="navbar-user" sec:authorize="!isAuthenticated()">
+        <a th:href="@{/login}" class="btn btn-sm btn-outline" style="color:#D4C9B8;border-color:#D4C9B8">вход</a>
+        <a th:href="@{/register}" class="btn btn-sm btn-primary">региclстрация</a>
+    </div>
+</nav>
+</body>
+</html>

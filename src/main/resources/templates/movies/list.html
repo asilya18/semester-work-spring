@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{layout/base}"
+      lang="ru">
+<head><title>фильмы</title></head>
+<body>
+<div layout:fragment="content">
+    <div class="filmstrip"></div>
+    <div class="page-header">
+        <h1>библиотека фильмов</h1>
+        <div style="display:flex;gap:0.5rem;align-items:center">
+            <a sec:authorize="hasRole('ADMIN')"
+               th:href="${filter == 'manual'} ? @{/movies} : @{/movies(filter='manual')}"
+               th:text="${filter == 'manual'} ? 'все фильмы' : 'добавленные вручную'"
+               class="btn btn-outline btn-sm"></a>
+            <!-- если фильтр manual - отображаются фильмы добавленные вручную -->
+            <a th:href="@{/movies/new}" class="btn btn-primary btn-sm">+ добавить фильм</a>
+        </div>
+    </div>
+
+    <div class="detail-box" style="margin-bottom:1.5rem">
+        <input type="text" id="searchInput"
+               placeholder="поиск фильмов..."
+               style="width:100%;padding:0.65rem 1rem;border:1px solid var(--border);border-radius:6px;background:var(--bg-card);color:var(--text);font-size:1rem;box-sizing:border-box">
+    </div>
+
+    <div id="movies-container">
+        <div th:if="${movies.empty}" class="empty-state">
+            <div class="empty-icon">🎞</div>
+            <p>фильмов пока нет</p>
+        </div>
+
+        <div class="cards-grid" th:unless="${movies.empty}" id="movies-grid">
+            <div class="card" th:each="movie : ${movies}">
+                <div style="display:flex;gap:1rem;margin-bottom:0.75rem;min-width:0">
+                    <div style="flex-shrink:0">
+                        <img th:if="${movie.posterUrl}" th:src="${movie.posterUrl}" th:alt="${movie.title}"
+                             style="width:60px;height:84px;object-fit:cover;border-radius:4px;border:1px solid var(--border)">
+                        <div th:unless="${movie.posterUrl}"
+                             style="width:60px;height:84px;border-radius:4px;background:var(--bg-dark);display:flex;align-items:center;justify-content:center;color:var(--border);font-size:1.5rem;flex-shrink:0">🎬</div>
+                    </div>
+                    <div style="min-width:0;overflow:hidden">
+                        <h3 class="card-title" th:text="${movie.title}"></h3>
+                        <p class="card-meta" th:if="${movie.year}">📅 <span th:text="${movie.year}"></span></p>
+                        <p class="card-meta" th:if="${movie.durationMinutes}">⏱ <span th:text="${movie.durationMinutes}"></span> мин</p>
+                    </div>
+                </div>
+                <div class="card-actions">
+                    <a th:href="@{/movies/{id}(id=${movie.id})}" class="btn btn-outline btn-sm">подробнее</a>
+                    <a sec:authorize="hasRole('ADMIN')" th:href="@{/movies/{id}/edit(id=${movie.id})}" class="btn btn-muted btn-sm">изменить</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<th:block layout:fragment="scripts">
+<script>
+(function () {
+    const input = document.getElementById('searchInput');
+    const container = document.getElementById('movies-container');
+    const initialHTML = container.innerHTML;
+    // сохраняем исходный html библиотеки фильмов, чтобы потом снова отобразить
+    let debounceTimer = null;
+
+    function buildCard(result) { // строим карточки каждого фильма из result
+            const poster = result.posterUrl
+                ? `<img src="${escHtml(result.posterUrl)}" alt="${escHtml(result.title)}" style="width:60px;height:84px;object-fit:cover;border-radius:4px;border:1px solid var(--border)">`
+                : `<div style="width:60px;height:84px;border-radius:4px;background:var(--bg-dark);display:flex;align-items:center;justify-content:center;color:var(--border);font-size:1.5rem;flex-shrink:0">🎬</div>`;
+            //  escHtml - защита от xss
+            const yearHtml = result.year ? `<p class="card-meta">📅 ${result.year}</p>` : '';
+            const badge = result.source === 'KINOPOISK' ? '<span class="badge badge-kp">кинопоиск</span>' : '';
+
+            let detailBtn = '';
+            if (result.id) {
+                detailBtn = `<a href="/movies/${result.id}" class="btn btn-outline btn-sm">подробнее</a>`;
+                // если фильм из бд
+            } else if (result.kinopoiskId) {
+                detailBtn = `<a href="/movies/kinopoisk/${escHtml(result.kinopoiskId)}" class="btn btn-outline btn-sm">подробнее</a>`;
+                // если фильм подтягивается из кинопоиска
+            }
+        // готовая html-карточка
+            return `<div class="card">
+                <div style="display:flex;gap:1rem;margin-bottom:0.75rem;min-width:0">
+                    <div style="flex-shrink:0">${poster}</div>
+                    <div style="min-width:0;overflow:hidden">
+                        <h3 class="card-title">${escHtml(result.title)}</h3>
+                        ${yearHtml}${badge}
+                    </div>
+                </div>
+                <div class="card-actions">${detailBtn}</div>
+            </div>`;
+    }
+
+    function escHtml(str) {
+        return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+    // /& - ищет символ /g - заменяет все вхождения
+
+    function renderResults(results) {
+        if (!results || results.length === 0) {
+            container.innerHTML = `<div class="empty-state">
+                <p>ничего не найдено :(</p>
+                <a href="/movies/new" class="btn btn-primary btn-sm" style="margin-top:1rem">+ добавить фильм</a>
+            </div>`;
+            return;
+        }
+        container.innerHTML = `<div class="cards-grid">${results.map(buildCard).join('')}</div>`;
+        // results.map(buildCard) — для каждого фильма вызывает buildCard,
+        // получаем массив HTML-строк, склеиваем массив в одну строку без разделителя
+        // и вставляем в контейнер сетку карточек
+    }
+
+    function doSearch(query) {
+        if (!query || !query.trim()) {
+            container.innerHTML = initialHTML;
+            return;
+        }
+        fetch(`/api/movies/search?query=${encodeURIComponent(query.trim())}`)
+            // encodeURIComponent — кодирует строку для URL
+            // иначе кириллица и пробелы ломают
+            .then(r => r.json())
+            .then(renderResults)
+            .catch(() => {}); // при ошибке игнорируем
+    }
+
+    input.addEventListener('input', function () {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => doSearch(input.value), 350);
+        // после каждой буквы таймер сбрасывается и начинается новый отсчет на 350 мс
+        // запрос уходит только когда между запросами больше 350 мс
+    });
+})();
+</script>
+</th:block>
+</body>
+</html>

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      lang="ru">
+<head><title>поиск фильмов для номинации</title></head>
+<body>
+<div layout:fragment="content">
+    <div class="filmstrip"></div>
+    <div class="page-header">
+        <h1>поиск фильмов</h1>
+        <a th:href="${movieNightId != null} ? @{/movienights/{id}(id=${movieNightId})} : @{/movies}"
+           class="btn btn-muted btn-sm">← назад к киновечеру </a>
+    </div>
+
+    <div class="detail-box">
+        <div style="display:flex;gap:0.75rem;align-items:center">
+            <input type="hidden" th:if="${movieNightId != null}" name="movieNightId" th:value="${movieNightId}">
+            <input type="text" id="searchInput"
+                   placeholder="введите название фильма..." autofocus
+                   style="flex:1;padding:0.6rem 0.9rem;border:1px solid var(--border);border-radius:6px;background:var(--bg-card);color:var(--text);font-size:1rem">
+        </div>
+    </div>
+
+    <div id="results-container">
+        <div th:if="${results != null and !results.empty}" class="cards-grid">
+            <div class="card" th:each="result : ${results}">
+                <div style="display:flex;gap:1rem;margin-bottom:0.75rem;min-width:0">
+                    <div style="flex-shrink:0">
+                        <img th:if="${result.posterUrl}" th:src="${result.posterUrl}" th:alt="${result.title}"
+                             style="width:60px;height:84px;object-fit:cover;border-radius:4px;border:1px solid var(--border)">
+                        <div th:unless="${result.posterUrl}"
+                             style="width:60px;height:84px;border-radius:4px;background:var(--bg-dark);display:flex;align-items:center;justify-content:center;color:var(--border);font-size:1.5rem;flex-shrink:0">🎬</div>
+                    </div>
+                    <div style="min-width:0;overflow:hidden">
+                        <h3 class="card-title" th:text="${result.title}"></h3>
+                        <p class="card-meta" th:if="${result.year}">📅 <span th:text="${result.year}"></span></p>
+                        <span th:if="${result.source == 'KINOPOISK'}" class="badge badge-kp">кинопоиск</span>
+                    </div>
+                </div>
+                <div class="card-actions">
+                    <a th:if="${result.id != null}" th:href="@{/movies/{id}(id=${result.id})}"
+                       class="btn btn-outline btn-sm">подробнее</a>
+                    <a th:if="${result.id == null and result.kinopoiskId != null}"
+                       th:href="@{/movies/kinopoisk/{kid}(kid=${result.kinopoiskId})}"
+                       class="btn btn-outline btn-sm">подробнее</a>
+                    <form th:if="${movieNightId != null}"
+                          th:action="@{/movienights/{id}/nominations(id=${movieNightId})}"
+                          method="post" style="display:inline">
+                        <input type="hidden" th:if="${result.id != null}" name="movieId" th:value="${result.id}">
+                        <input type="hidden" th:if="${result.id == null}" name="kinopoiskId" th:value="${result.kinopoiskId}">
+                        <button type="submit" class="btn btn-primary btn-sm">+ номинировать фильм</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div th:if="${results != null and results.empty}" class="empty-state">
+            <p>ничего не найдено по запросу :( «<span th:text="${query}"></span>».</p>
+        </div>
+
+        <div th:if="${results == null}" class="empty-state">
+            <div class="empty-icon">🎞</div>
+            <p>введите название фильма для поиска</p>
+        </div>
+    </div>
+</div>
+
+<th:block layout:fragment="scripts">
+<script th:inline="javascript">
+(function () {
+    const input = document.getElementById('searchInput');
+    const container = document.getElementById('results-container');
+    const initialHTML = container.innerHTML;
+    const movieNightId = /*[[${movieNightId}]]*/ null;
+
+    const csrf = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+    // csrf-токен — нужен для формы номинирования (post-запрос)
+
+    let debounceTimer = null;
+
+    function buildCard(result) {
+        const poster = result.posterUrl
+            ? `<img src="${escHtml(result.posterUrl)}" alt="${escHtml(result.title)}" style="width:60px;height:84px;object-fit:cover;border-radius:4px;border:1px solid var(--border)">`
+            : `<div style="width:60px;height:84px;border-radius:4px;background:var(--bg-dark);display:flex;align-items:center;justify-content:center;color:var(--border);font-size:1.5rem;flex-shrink:0">🎬</div>`;
+
+        const yearHtml = result.year ? `<p class="card-meta">📅 ${result.year}</p>` : '';
+        const badge = result.source === 'KINOPOISK'
+            ? '<span class="badge badge-kp">кинопоиск</span>'
+            : '';
+
+        let detailBtn = '';
+        if (result.id) {
+            detailBtn = `<a href="/movies/${result.id}" class="btn btn-outline btn-sm">подробнее</a>`;
+        } else if (result.kinopoiskId) {
+            detailBtn = `<a href="/movies/kinopoisk/${escHtml(result.kinopoiskId)}" class="btn btn-outline btn-sm">подробнее</a>`;
+        }
+
+        let nominateForm = '';
+        if (movieNightId) {
+            const hiddenInput = result.id
+                ? `<input type="hidden" name="movieId" value="${result.id}">`
+                : `<input type="hidden" name="kinopoiskId" value="${escHtml(result.kinopoiskId || '')}">`;
+            const csrfInput = csrf ? `<input type="hidden" name="_csrf" value="${escHtml(csrf)}">` : '';
+            nominateForm = `<form action="/movienights/${movieNightId}/nominations" method="post" style="display:inline">
+                    ${hiddenInput}${csrfInput}
+                    <button type="submit" class="btn btn-primary btn-sm">+ номинировать фильм</button>
+                </form>`;
+        }
+
+        return `<div class="card">
+                <div style="display:flex;gap:1rem;margin-bottom:0.75rem;min-width:0">
+                    <div style="flex-shrink:0">${poster}</div>
+                    <div style="min-width:0;overflow:hidden">
+                        <h3 class="card-title">${escHtml(result.title)}</h3>
+                        ${yearHtml}${badge}
+                    </div>
+                </div>
+                <div class="card-actions">${detailBtn}${nominateForm}</div>
+            </div>`;
+    }
+
+    function escHtml(str) {
+        return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function renderResults(results) {
+        if (!results || results.length === 0) {
+            container.innerHTML = '<div class="empty-state"><p>ничего не найдено :( </p></div>';
+            return;
+        }
+        container.innerHTML = `<div class="cards-grid">${results.map(buildCard).join('')}</div>`;
+    }
+
+    function doSearch(query) {
+        if (!query || !query.trim()) {
+            container.innerHTML = initialHTML;
+            return;
+        }
+        fetch(`/api/movies/search?query=${encodeURIComponent(query.trim())}`)
+            .then(r => r.json())
+            .then(renderResults)
+            .catch(() => {});
+    }
+
+    input.addEventListener('input', function () {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => doSearch(input.value), 400);
+    });
+})();
+</script>
+</th:block>
+</body>
+</html>

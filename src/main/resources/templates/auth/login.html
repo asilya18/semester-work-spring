@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/auth}"
+      lang="ru">
+<head><title>вход</title></head>
+<body>
+<div layout:fragment="content">
+    <div class="form-container">
+        <h1 class="form-title">вход</h1>
+
+        <div class="alert alert-success" th:if="${message}" th:text="${message}"></div>
+        <!-- th:if="${message}" отображается, если Model содержит непустой атрибут-->
+        <!-- экранирует символы -->
+        <div class="alert alert-error" th:if="${error}" th:text="${error}"></div>
+
+        <form th:action="@{/login}" method="post">
+            <div class="form-group">
+                <label for="username">имя пользователя</label>
+                <input type="text" id="username" name="username" placeholder="введите имя" required autofocus>
+            </div>
+            <div class="form-group">
+                <label for="password">пароль</label>
+                <input type="password" id="password" name="password" placeholder="введите пароль" required>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary btn-full">войти</button>
+            </div>
+        </form>
+        <div class="form-link" style="margin-top:1rem">
+            нет аккаунта? <a th:href="@{/register}">зарегистрироваться</a>
+        </div>
+    </div>
+</div>
+</body>
+</html>

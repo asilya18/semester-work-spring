@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      lang="ru">
+<head><title>страница не найдена</title></head>
+<body>
+<div layout:fragment="content">
+    <div style="text-align:center;padding:5rem 1rem">
+        <h1 style="font-size:4rem;color:var(--accent);margin-bottom:0.5rem">404</h1>
+        <p style="font-size:1.25rem;color:var(--text-muted);margin-bottom:0.5rem">страница не найдена</p>
+        <p th:if="${errorMessage}" th:text="${errorMessage}" style="color:var(--text-muted);font-size:0.9rem;margin-bottom:2rem"></p>
+        <a th:href="@{/}" class="btn btn-outline">на главную</a>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      lang="ru">
+<head><title th:text="${movieNight.title}">киновечер</title></head>
+<!-- киновечер - дефолтное значение -->
+<body>
+<div layout:fragment="content">
+    <div class="filmstrip"></div>
+    <!-- декоративная css-полоска сверху-->
+
+    <!-- header -->
+    <div class="detail-box">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:0.75rem">
+            <h1 th:text="${movieNight.title}" style="margin-bottom:0"></h1>
+            <!-- добавляем css-класс (меняем цвет и текст) в зависимости от статуса -->
+            <span class="badge"
+                  th:classappend="${movieNight.status.name() == 'PLANNED'} ? 'badge-planned'
+                  : (${movieNight.status.name() == 'ACTIVE'} ? 'badge-ongoing'
+                  : 'badge-finished')"
+                  th:text="${movieNight.status.name() == 'PLANNED'} ? 'запланирован' : (${movieNight.status.name() == 'ACTIVE'} ? 'идёт' : 'завершён')">
+            </span>
+        </div>
+
+        <div class="detail-meta">
+            <span>📅 <span th:text="${#temporals.format(movieNight.eventDate, 'dd.MM.yyyy HH:mm')}"></span></span>
+            <!-- temporals — утилита для форматирования дат -->
+            <span th:if="${movieNight.platform}">платформа: <span th:text="${movieNight.platform}"></span></span>
+            <span>организатор: <strong th:text="${movieNight.creator.username}"></strong></span>
+        </div>
+        <p th:if="${movieNight.description}" th:text="${movieNight.description}" style="color:var(--text-muted);font-size:0.93rem;margin-bottom:1rem"></p>
+
+        <div class="detail-actions">
+            <!-- кнопки создателя -->
+            <th:block th:if="${currentUser.id == movieNight.creator.id}">
+                <a th:href="@{/movienights/{id}/edit(id=${movieNight.id})}" class="btn btn-outline btn-sm">редактировать</a>
+                <form th:action="@{/movienights/{id}/delete(id=${movieNight.id})}" method="post" style="display:inline"
+                      onsubmit="return confirm('вы действительно хотите удалить киновечер ?')">
+                    <button type="submit" class="btn btn-danger btn-sm">удалить</button>
+                </form>
+            </th:block>
+
+            <th:block th:if="${currentUser.id != movieNight.creator.id}">
+                <form th:if="${!isParticipant}" th:action="@{/movienights/{id}/join(id=${movieNight.id})}" method="post" style="display:inline">
+                    <button type="submit" class="btn btn-primary btn-sm">присоединиться к киновечеру</button>
+                </form>
+                <form th:if="${isParticipant}" th:action="@{/movienights/{id}/leave(id=${movieNight.id})}" method="post" style="display:inline">
+                    <button type="submit" class="btn btn-muted btn-sm">покинуть киновечер</button>
+                </form>
+            </th:block>
+        </div>
+    </div>
+
+    <div class="detail-box">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem">
+            <h2 class="section-title" style="margin-bottom:0;flex:1">номинации на этот киновечер</h2>
+            <a th:if="${isParticipant and movieNight.status.name() != 'FINISHED'}"
+               th:href="@{/movies/search(movieNightId=${movieNight.id})}"
+               class="btn btn-outline btn-sm" style="margin-left:1rem">хочу номинировать фильм</a>
+        </div>
+
+        <div th:if="${nominations.empty}" class="empty-state" style="padding:1.5rem">
+            <p>никто ещё не номинировал фильмы</p>
+        </div>
+
+        <div th:each="nomination : ${nominations}" class="nomination-item">
+            <div class="nomination-info">
+                <div class="nomination-title">
+                    <a th:href="@{/movies/{id}(id=${nomination.movie.id})}" th:text="${nomination.movie.title}"
+                       style="color:inherit;text-decoration:none;border-bottom:1px dashed var(--border)"></a>
+                    <span th:if="${nomination.movie.year}" class="card-meta" th:text="'(' + ${nomination.movie.year} + ')'"></span>
+                    <span th:if="${nomination.winner}" class="badge badge-winner" style="margin-left:0.4rem">фильм-победитель</span>
+                </div>
+                <div class="nomination-by">номинировал: <span th:text="${nomination.nominatedBy.username}"></span></div>
+            </div>
+
+            <div class="vote-area">
+                <!-- vote-count-id - чтобы знать какой счетчик обновлять -->
+                <span class="vote-count" th:id="'vote-count-' + ${nomination.id}"
+                      th:text="${voteCountMap[nomination.id]}">0</span>
+                <button type="button"
+                        th:if="${isParticipant and movieNight.status.name() != 'FINISHED'}"
+                        th:id="'vote-btn-' + ${nomination.id}"
+                        th:class="${hasVotedMap[nomination.id]} ? 'btn-vote voted' : 'btn-vote'"
+                        th:attr="data-id=${nomination.id}"
+                        onclick="toggleVote(this)">
+                    <!--  th:attr добавляет атрибут на кнопку, чтобы хранить данные прямо в теге для js -->
+                    <span th:text="${hasVotedMap[nomination.id]} ? '★ голос' : '☆ голосовать'"></span>
+                </button>
+                <form th:if="${currentUser.id == movieNight.creator.id and movieNight.status.name() != 'FINISHED' and !nomination.winner}"
+                      th:action="@{/nominations/{nid}/winner(nid=${nomination.id})}" method="post" style="display:inline">
+                    <input type="hidden" name="movieNightId" th:value="${movieNight.id}">
+                    <button type="submit" class="btn btn-primary btn-sm">будем смотреть!</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="detail-box">
+        <h2 class="section-title">отзывы зрителей</h2>
+
+        <div th:if="${isParticipant and movieNight.status.name() == 'FINISHED'}" style="margin-bottom:1.5rem">
+            <h3 style="font-size:1rem;margin-bottom:0.75rem">оставьте ваш отзыв</h3>
+            <form th:action="@{/movienights/{id}/reviews(id=${movieNight.id})}" th:object="${reviewForm}" method="post">
+                <div style="display:flex;gap:1rem;flex-wrap:wrap">
+                    <div class="form-group" style="flex:1;min-width:140px">
+                        <label for="movieRating">оценка фильма (1–10) <span style="color:var(--text-muted);font-size:0.8em">необязательно</span></label>
+                        <input type="number" id="movieRating" th:field="*{movieRating}" min="1" max="10" placeholder="—">
+                    </div>
+                    <div class="form-group" style="flex:1;min-width:140px">
+                        <label for="eventRating">оценка киновечера (1–10) <span style="color:var(--text-muted);font-size:0.8em">необязательно</span></label>
+                        <input type="number" id="eventRating" th:field="*{eventRating}" min="1" max="10" placeholder="—">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="comment">комментарий (необязательно)</label>
+                    <textarea id="comment" th:field="*{comment}" placeholder="поделитесь впечатлениями..."></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary btn-sm">опубликовать отзыв</button>
+            </form>
+        </div>
+
+        <div th:if="${reviews.empty}" class="empty-state" style="padding:1.5rem">
+            <p>отзывов пока нет</p>
+        </div>
+
+        <div th:each="review : ${reviews}" class="review-item">
+            <div class="review-header">
+                <span class="review-author" th:text="${review.author.username}"></span>
+                <span class="review-ratings">
+                    <th:block th:if="${review.movieRating != null}">фильм <span th:text="${review.movieRating}"></span>/10 &nbsp;</th:block>
+                    <th:block th:if="${review.eventRating != null}">киновечер <span th:text="${review.eventRating}"></span>/10</th:block>
+                </span>
+            </div>
+            <p class="review-text" th:if="${review.comment}" th:text="${review.comment}"></p>
+        </div>
+    </div>
+
+    <a th:href="@{/movienights}" class="btn btn-muted btn-sm">обратно к киновечерам</a>
+</div>
+
+<th:block layout:fragment="scripts">
+    <!-- scripts из base — весь js этой страницы вставляется сюда -->
+ <!-- показ ошибки отзыва -->
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    (function() {
+        const reviewError = /*[[${reviewError}]]*/ null; // переменная существует только внутри этой функции
+        if (reviewError) document.addEventListener('DOMContentLoaded', () => showToast(reviewError));
+    })();
+    /*]]>*/
+</script>
+    <!-- голосование -->
+<script th:inline="javascript">
+function toggleVote(btn) { // принимает btn который нажали
+    const nominationId = btn.getAttribute('data-id');
+    const isVoted = btn.classList.contains('voted'); // есть ли класс voted на кнопке
+    const method = isVoted ? 'DELETE' : 'POST';
+
+    const csrf = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
+
+    const headers = {'Content-Type': 'application/json'};
+    if (csrf && csrfHeader) headers[csrfHeader] = csrf;
+    // csrf-токен добавляем в заголовок запроса для секьюрити
+
+    btn.disabled = true; // блокировка кнопки во время выполнения запроса
+    fetch(`/api/votes/${nominationId}`, {method, headers})
+        .then(r => r.json()) // превращаем json-ответ от сервера в js обьект
+        .then(data => { // уже готовый js обьект
+            if (data.success !== false) {
+                document.getElementById('vote-count-' + nominationId).textContent = data.voteCount;
+                // обновляем значени счетчика ответом с сервера
+                btn.classList.toggle('voted'); // toggle убирает/добавляет класс
+                btn.querySelector('span').textContent = btn.classList.contains('voted') ? '★ голос' : '☆ голосовать';
+            } else {
+                alert(data.message || 'ошибка');
+            }
+        })
+        .catch(() => alert('ошибка соединения'))
+        .finally(() => { btn.disabled = false; }); // разблокировка кнопки
+}
+</script>
+</th:block>
+</body>
+</html>

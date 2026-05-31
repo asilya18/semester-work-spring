@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      lang="ru">
+<!--/* sec: интеграция spring security — даёт атрибуты sec:authorize в шаблонах */-->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- масштабирование на мобильных -->
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <!-- для fetch/ajax таймлиф не добавляет csrf-токены автоматически -->
+    <!-- поэтому кладем токен в мета-теги для js -->
+    <title layout:title-pattern="$CONTENT_TITLE — movieNight">movieNight</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <nav th:replace="~{fragments/navbar :: navbar}"></nav>
+    <!-- заменяет целиком этот тег содержимым фрагмента -->
+    <main class="main-content">
+        <div layout:fragment="content">
+            <!-- содержание дочерней страницы -->
+        </div>
+    </main>
+    <footer class="footer">
+        <p> movienights — исследуем мир кино вместе</p>
+    </footer>
+    <th:block layout:fragment="scripts"></th:block>
+    <!--  th:block - виртуальный тег, не рендерится -->
+    <!-- для js дочерних элементов -->
+
+    <!-- всплывающие уведомления -->
+    <div id="toast-container" style="position:fixed;bottom:1.5rem;right:1.5rem;z-index:9999;display:flex;flex-direction:column;gap:0.5rem;max-width:360px"></div>
+    <th:block th:if="${error}">
+        <!-- здесь сообщения из RedirectAttributes.addFlashAttribute -->
+        <script th:inline="javascript">
+            // вставка значения из модели в js
+            document.addEventListener('DOMContentLoaded',
+                () => showToast([[${error}]]));
+        </script>
+    </th:block>
+
+    <script>
+    function showToast(message) {
+        const container = document.getElementById('toast-container');
+        if (!container || !message) return;
+        const toast = document.createElement('div');
+        toast.textContent = message;
+        toast.style.cssText = [
+            'padding:0.85rem 1.1rem',
+            'border-radius:8px',
+            'font-size:0.9rem',
+            'line-height:1.4',
+            'box-shadow:0 4px 16px rgba(0,0,0,0.35)',
+            'opacity:0',
+            'transition:opacity 0.25s',
+            'pointer-events:none',
+            'background:#5c1a1a;color:#f8b4b4;border:1px solid #8b2222'
+        ].join(';'); // css в одну строку для cssText
+        container.appendChild(toast); // opacity = 0
+        requestAnimationFrame(() => { toast.style.opacity = '1'; });
+        // для плавности появления плашки
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 300);
+        }, 4000); // 4с - висит, 0.3c - исчезает
+    }
+    </script>
+</body>
+</html>

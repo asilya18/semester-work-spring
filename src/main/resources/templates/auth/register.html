@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/auth}"
+      lang="ru">
+<head><title>регистрация</title></head>
+<body>
+<div layout:fragment="content">
+    <div class="form-container">
+        <h1 class="form-title">регистрация</h1>
+
+        <form th:action="@{/register}" th:object="${form}" method="post">
+            <div class="alert alert-error"
+                 th:if="${#fields.hasGlobalErrors()}" th:errors="*{global}"></div>
+            <!-- глобальные ошибки по типу "этот юзернейм уже занят"-->
+            <!-- fields — утилита для работы с ошибками валидации -->
+            <div class="form-group">
+                <label for="username">имя пользователя</label>
+                <input type="text" id="username" th:field="*{username}"
+                       placeholder="от 3 до 50 символов" autofocus>
+                <!-- есть ли ошибки именно у поля юзернейм -->
+                <span class="field-error" th:if="${#fields.hasErrors('username')}"
+                      th:errors="*{username}"></span>
+            </div>
+            <div class="form-group">
+                <label for="email">email</label>
+                <input type="email" id="email" th:field="*{email}"
+                       placeholder="example@mail.com">
+                <span class="field-error" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></span>
+            </div>
+            <div class="form-group">
+                <label for="password">пароль</label>
+                <input type="password" id="password" th:field="*{password}" placeholder="минимум 6 символов">
+                <span class="field-error" th:if="${#fields.hasErrors('password')}"
+                      th:errors="*{password}"></span>
+                <span class="form-hint">минимум 6 символов</span>
+                <!-- form-hint — подсказка под полем, всегда видна. -->
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary btn-full">создать аккаунт</button>
+            </div>
+        </form>
+
+        <div class="form-link" style="margin-top:1rem">
+            уже есть аккаунт? <a th:href="@{/login}">войти</a>
+        </div>
+    </div>
+</div>
+</body>
+</html>
