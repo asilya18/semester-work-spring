@@ -13,7 +13,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MovieRepositoryCustomImpl implements MovieRepositoryCustom {
-
     @PersistenceContext // аннотация специально для em
     // autowired не подходит, тк это не обычный спринг бин
     private EntityManager entityManager;
