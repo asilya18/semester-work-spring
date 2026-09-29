@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+  namespace: team-project
+data:
+  SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres-0.postgres.team-project.svc.cluster.local:5432/movienight"
+  SPRING_DATA_REDIS_HOST: "redis"
+  SPRING_DATA_REDIS_PORT: "6379"
+  TZ: "Europe/Moscow"
