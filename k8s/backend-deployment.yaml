@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: movienight-backend
+  namespace: team-project
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: movienight-backend
+  template:
+    metadata:
+      labels:
+        app: movienight-backend
+    spec:
+      containers:
+        - name: movienight-backend
+          image: movienight-app:local
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: backend-config
+            - secretRef:
+                name: backend-secret
+          readinessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 5
+          livenessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
