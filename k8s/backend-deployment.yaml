@@ -15,8 +15,8 @@ spec:
     spec:
       containers:
         - name: movienight-backend
-          image: movienight-app:local
-          imagePullPolicy: Never
+          image: docker.io/asilya18/movienight-app:1.0
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
           envFrom:
