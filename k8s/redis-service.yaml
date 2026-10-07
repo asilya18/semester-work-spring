@@ -4,6 +4,7 @@ metadata:
   name: redis
   namespace: team-project
 spec:
+  clusterIP: None
   selector:
     app: redis
   ports:
