@@ -13,10 +13,18 @@ spec:
       labels:
         app: movienight-backend
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
       containers:
         - name: movienight-backend
           image: docker.io/asilya18/movienight-app:1.0
           imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
           ports:
             - containerPort: 8080
           envFrom:
@@ -29,6 +37,9 @@ spec:
             - name: SPRING_DATASOURCE_PASSWORD
               valueFrom:
                 secretKeyRef: { name: postgres-secret, key: POSTGRES_PASSWORD }
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
           readinessProbe:
             tcpSocket:
               port: 8080
@@ -41,3 +52,6 @@ spec:
             initialDelaySeconds: 180
             periodSeconds: 10
             failureThreshold: 5
+      volumes:
+        - name: tmp
+          emptyDir: {}
